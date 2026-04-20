@@ -1,134 +1,166 @@
-const SOURCES = [
+// ---- CONFIG ----
+const FEEDS = [
   {
-    id: "hfsc",
-    label: "House Financial Services",
-    type: "regulator",
-    url: "https://financialservices.house.gov/news/documentquery.aspx?DocumentTypeID=27",
+    id: "senate",
+    label: "Senate Banking – Press Releases",
+    url: "https://reg-proxy.mikefromthe805.workers.dev/senate/press",
   },
   {
-    id: "senate-banking",
-    label: "Senate Banking",
-    type: "regulator",
-    url: "https://www.banking.senate.gov/newsroom/majority-press-releases",
+    id: "hfsc",
+    label: "House Financial Services – Press Releases",
+    url: "https://reg-proxy.mikefromthe805.workers.dev/hfsc/press",
+  },
+  {
+    id: "hfscHearings",
+    label: "House Financial Services – Hearings",
+    url: "https://reg-proxy.mikefromthe805.workers.dev/hfsc/hearings",
   },
   {
     id: "treasury",
-    label: "U.S. Treasury",
-    type: "regulator",
-    url: "https://home.treasury.gov/news/press-releases",
-  },
-  {
-    id: "fed",
-    label: "Federal Reserve",
-    type: "regulator",
-    url: "https://www.federalreserve.gov/newsevents/pressreleases.htm",
-  },
-  {
-    id: "occ",
-    label: "OCC",
-    type: "regulator",
-    url: "https://www.occ.gov/news-issuances/index-news-issuances.html",
+    label: "U.S. Treasury – Press Releases",
+    url: "https://reg-proxy.mikefromthe805.workers.dev/treasury/press",
   },
   {
     id: "circle",
-    label: "Circle (USDC)",
-    type: "issuer",
-    url: "https://www.circle.com/blog",
+    label: "Circle – Announcements",
+    url: "https://reg-proxy.mikefromthe805.workers.dev/circle/rss",
+  },
+  {
+    id: "paxos",
+    label: "Paxos – Updates",
+    url: "https://reg-proxy.mikefromthe805.workers.dev/paxos/rss",
+  },
+  {
+    id: "paypal",
+    label: "PayPal – News (PYUSD)",
+    url: "https://reg-proxy.mikefromthe805.workers.dev/paypal/rss",
+  },
+  {
+    id: "gemini",
+    label: "Gemini – Updates",
+    url: "https://reg-proxy.mikefromthe805.workers.dev/gemini/rss",
   },
 ];
 
-const KEYWORDS_HIGH = [
-  "clarity act",
-  "stablecoin",
-  "payment stablecoin",
-  "digital asset framework",
-  "legislation",
-  "markup",
-  "committee vote",
-  "floor vote",
-  "signed into law",
-];
+// ---- SIGNAL SCORING ----
+function scoreSignal(item) {
+  const text = `${item.title} ${item.description}`.toLowerCase();
 
-const KEYWORDS_MEDIUM = [
-  "guidance",
-  "supervisory",
-  "policy statement",
-  "consultation",
-  "proposal",
-  "rulemaking",
-];
+  const highKeywords = [
+    "stablecoin",
+    "payment stablecoin",
+    "digital asset market clarity",
+    "genius act",
+    "markup",
+    "mark-up",
+    "hearing",
+    "legislation",
+    "bill",
+    "framework",
+    "regulation",
+    "regulatory",
+  ];
 
-const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+  const mediumKeywords = [
+    "crypto",
+    "digital asset",
+    "token",
+    "blockchain",
+    "web3",
+    "pilot",
+    "program",
+    "guidance",
+    "consultation",
+  ];
 
-const regulatorsList = document.getElementById("regulators-list");
-const issuersList = document.getElementById("issuers-list");
-const metaList = document.getElementById("meta-list");
-const regulatorsCount = document.getElementById("regulators-count");
-const issuersCount = document.getElementById("issuers-count");
-const lastUpdatedEl = document.getElementById("last-updated");
-const refreshBtn = document.getElementById("refresh-btn");
-
-function normalizeText(str) {
-  return (str || "").toLowerCase();
-}
-
-function scorePriority(title, summary) {
-  const text = normalizeText(title + " " + summary);
-
-  if (KEYWORDS_HIGH.some((k) => text.includes(k))) return "high";
-  if (KEYWORDS_MEDIUM.some((k) => text.includes(k))) return "medium";
+  if (highKeywords.some(k => text.includes(k))) return "high";
+  if (mediumKeywords.some(k => text.includes(k))) return "medium";
   return "low";
 }
 
-function parseItemsFromHtml(html, source) {
-  // Very lightweight heuristic parsing; you can refine per‑source later.
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  const items = [];
-
-  // Try generic article / list selectors
-  const candidates = doc.querySelectorAll("article, .press-release, .news-item, li, .post");
-
-  candidates.forEach((node) => {
-    const link = node.querySelector("a[href]");
-    if (!link) return;
-
-    const title = link.textContent.trim();
-    if (!title) return;
-
-    const href = link.getAttribute("href");
-    const url = href.startsWith("http")
-      ? href
-      : new URL(href, source.url).toString();
-
-    const timeNode =
-      node.querySelector("time") ||
-      node.querySelector(".date") ||
-      node.querySelector(".pubdate");
-
-    const summaryNode =
-      node.querySelector("p") ||
-      node.querySelector(".summary") ||
-      node.querySelector(".dek");
-
-    const summary = summaryNode ? summaryNode.textContent.trim() : "";
-    const priority = scorePriority(title, summary);
-
-    let timestamp = timeNode ? timeNode.getAttribute("datetime") || timeNode.textContent.trim() : "";
-    items.push({
-      sourceId: source.id,
-      sourceLabel: source.label,
-      type: source.type,
-      title,
-      url,
-      summary,
-      priority,
-      timestamp,
-    });
-  });
-
-  return items;
+function signalLabel(level) {
+  if (level === "high") return "HIGH";
+  if (level === "medium") return "MED";
+  return "LOW";
 }
 
-async function fetchSource(source) {
+// ---- RENDERING ----
+function renderFeed(container, label, items) {
+  const now = new Date();
+
+  const html = `
+    <div class="feed-header">
+      <h2>${label}</h2>
+      <span class="feed-updated">Updated: ${now.toLocaleTimeString()}</span>
+    </div>
+    <div class="feed-items">
+      ${items
+        .slice(0, 8)
+        .map(item => {
+          const level = scoreSignal(item);
+          const date = item.pubDate ? new Date(item.pubDate) : null;
+          const dateStr = date ? date.toLocaleString() : "";
+
+          return `
+            <div class="feed-item feed-item-${level}">
+              <div class="feed-item-top">
+                <span class="signal signal-${level}">
+                  ${signalLabel(level)}
+                </span>
+                <a href="${item.link}" target="_blank" class="feed-title">
+                  ${item.title || "(no title)"}
+                </a>
+              </div>
+              <div class="feed-meta">
+                ${dateStr ? `<span class="feed-date">${dateStr}</span>` : ""}
+              </div>
+            </div>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+
+// ---- FETCHING ----
+async function loadFeed(feed) {
+  const container = document.getElementById(feed.id);
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="feed-header">
+      <h2>${feed.label}</h2>
+      <span class="feed-updated">Loading…</span>
+    </div>
+  `;
+
   try {
-    const res = await fetch
+    const res = await fetch(feed.url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    const items = Array.isArray(data.items) ? data.items : [];
+    renderFeed(container, feed.label, items);
+  } catch (err) {
+    container.innerHTML = `
+      <div class="feed-header">
+        <h2>${feed.label}</h2>
+        <span class="feed-updated error">Error loading feed</span>
+      </div>
+      <pre class="error-details">${String(err)}</pre>
+    `;
+  }
+}
+
+async function loadAllFeeds() {
+  await Promise.all(FEEDS.map(loadFeed));
+}
+
+// ---- INIT ----
+document.addEventListener("DOMContentLoaded", () => {
+  loadAllFeeds();
+  // auto-refresh every 60s
+  setInterval(loadAllFeeds, 60000);
+});
