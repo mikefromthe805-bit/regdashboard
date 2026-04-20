@@ -2,49 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Reg Clarity Radar</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="styles.css" />
+  <title>Stablecoin Clarity Signal Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
   <header>
-    <div>
-      <h1>Reg Clarity Radar</h1>
-      <div class="sub">Live scan: Clarity Act / stablecoin rail signals</div>
-    </div>
-    <div class="header-meta">
-      <span id="last-updated">Last updated: —</span>
-      <button id="refresh-btn">Refresh now</button>
-    </div>
+    <h1>Stablecoin Clarity Signal Dashboard</h1>
+    <p class="subtitle">Real‑time regulatory signals from Congress, Treasury, and issuers</p>
   </header>
 
   <main>
-    <section>
-      <div class="section-title">
-        <span>Regulators</span>
-        <span id="regulators-count" class="pill">0 items</span>
-      </div>
-      <div id="regulators-list" class="items"></div>
-    </section>
-
-    <section>
-      <div class="section-title">
-        <span>Issuers & Processors</span>
-        <span id="issuers-count" class="pill">0 items</span>
-      </div>
-      <div id="issuers-list" class="items"></div>
-    </section>
-
-    <section>
-      <div class="section-title">
-        <span>Meta / System Notes</span>
-      </div>
-      <div id="meta-list" class="items"></div>
-    </section>
+    <section id="senate" class="feed-section"></section>
+    <section id="hfsc" class="feed-section"></section>
+    <section id="hfscHearings" class="feed-section"></section>
+    <section id="treasury" class="feed-section"></section>
+    <section id="circle" class="feed-section"></section>
+    <section id="paxos" class="feed-section"></section>
+    <section id="paypal" class="feed-section"></section>
+    <section id="gemini" class="feed-section"></section>
   </main>
 
   <footer>
-    <span class="foot-pill">Source set: HFSC, Senate Banking, Treasury, Fed, OCC, Circle</span>
+    <p>Updated automatically every 60 seconds</p>
   </footer>
 
   <script src="app.js"></script>
