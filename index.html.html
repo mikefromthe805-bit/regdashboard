@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Reg Clarity Radar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Reg Clarity Radar</h1>
+      <div class="sub">Live scan: Clarity Act / stablecoin rail signals</div>
+    </div>
+    <div class="header-meta">
+      <span id="last-updated">Last updated: —</span>
+      <button id="refresh-btn">Refresh now</button>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <div class="section-title">
+        <span>Regulators</span>
+        <span id="regulators-count" class="pill">0 items</span>
+      </div>
+      <div id="regulators-list" class="items"></div>
+    </section>
+
+    <section>
+      <div class="section-title">
+        <span>Issuers & Processors</span>
+        <span id="issuers-count" class="pill">0 items</span>
+      </div>
+      <div id="issuers-list" class="items"></div>
+    </section>
+
+    <section>
+      <div class="section-title">
+        <span>Meta / System Notes</span>
+      </div>
+      <div id="meta-list" class="items"></div>
+    </section>
+  </main>
+
+  <footer>
+    <span class="foot-pill">Source set: HFSC, Senate Banking, Treasury, Fed, OCC, Circle</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
